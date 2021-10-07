@@ -3,6 +3,7 @@ import ninaCommon from 'nina-common'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { makeStyles } from '@material-ui/core/styles'
 import { Box } from '@material-ui/core'
+import CircularProgress from '@material-ui/core/CircularProgress'
 import Tabs from '@material-ui/core/Tabs'
 import Tab from '@material-ui/core/Tab'
 import SwipeableViews from 'react-swipeable-views'
@@ -26,9 +27,10 @@ const UserView = () => {
   const [userPublishedReleases, setUserPublishedReleases] = useState()
   const [userCollectionReleases, setUserCollectionReleases] = useState()
   const [userRoyaltyReleases, setUserRoyaltyReleases] = useState()
+  const [releaseStateLoaded, setReleaseStateLoaded] = useState(false)
 
   useEffect(() => {
-    if (index === 1) {
+    if (index === 1 || index === 2) {
       getReleasesPublishedByUser()
     }
   }, [index])
@@ -38,6 +40,9 @@ const UserView = () => {
       setUserPublishedReleases(filterReleasesPublishedByUser())
       setUserRoyaltyReleases(filterRoyaltiesByUser())
       setUserCollectionReleases(filterReleasesUserCollection())
+      setReleaseStateLoaded(Object.keys(releaseState.metadata).length > 0)
+      console.log('releaseState :>> ', releaseState);
+
     }
   }, [releaseState, collection])
 
@@ -76,6 +81,9 @@ const UserView = () => {
           )}
         </div>
         <div className={classes.slide}>
+          {!releaseStateLoaded &&
+              <CircularProgress color="inherit" className={classes.loader}/>
+          }
           {userPublishedReleases?.length > 0 && (
             <ReleaseListTable
               releases={userPublishedReleases}
@@ -83,13 +91,16 @@ const UserView = () => {
               key="releases"
             />
           )}
-          {userPublishedReleases?.length === 0 && (
+          {releaseStateLoaded && userPublishedReleases?.length === 0 && (
             <>
               <h1>{`You haven't published any music yet.`}</h1>
             </>
           )}
         </div>
         <div className={classes.slide}>
+          {!releaseStateLoaded &&
+            <CircularProgress color="inherit" className={classes.loader} />
+          }
           {userRoyaltyReleases?.length > 0 && (
             <ReleaseListTable
               releases={userRoyaltyReleases}
@@ -98,7 +109,7 @@ const UserView = () => {
               key="royalties"
             />
           )}
-          {userRoyaltyReleases?.length === 0 && (
+          {releaseStateLoaded && userRoyaltyReleases?.length === 0 && (
             <>
               <h1>{`You don't have royalties.`}</h1>
             </>
@@ -125,9 +136,14 @@ const useStyles = makeStyles(() => ({
   },
   slide: {
     padding: '0px',
-    minHeight: 100,
+    minHeight: 400,
     color: '#000',
+    display: 'flex',
+    justifyContent: 'center'
   },
+  loader: {
+    margin: 'auto'
+  }
 }))
 
 export default UserView
