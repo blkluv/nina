@@ -61,6 +61,7 @@ const RecentlyPublished = (props) => {
             )
 
             return (
+<<<<<<< HEAD
               <ReleaseSlideWrapper key={i}>
                 <ReleaseSlide key={i}>
                   <Link to={'/releases/' + release.releasePubkey}>
@@ -77,6 +78,22 @@ const RecentlyPublished = (props) => {
                   </ReleaseCopy>
                 </ReleaseSlide>
               </ReleaseSlideWrapper>
+=======
+              <ReleaseSlide key={i}>
+                <Link to={release.releasePubkey}>
+                  <SmoothImage src={imageUrl} />
+                </Link>
+                {availability}
+                <ReleaseCopy sx={{ display: 'flex' }}>
+                  <Typography variant="body2">
+                    {release.metadata.properties.artist},
+                  </Typography>{' '}
+                  <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                    {release.metadata.properties.title}
+                  </Typography>
+                </ReleaseCopy>
+              </ReleaseSlide>
+>>>>>>> 86a91a1cb649a6354dd437998f3d22f7de4c8178
             )
           })}
         </Slider>
