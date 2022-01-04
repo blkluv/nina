@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use metaplex_token_metadata::state::{Data};
 
 declare_id!("ninaN2tm9vUkxoanvGcNApEeWiidLMM2TdBX8HoJuL4");
 
@@ -29,6 +28,14 @@ pub mod nina {
         bumps: ReleaseBumps,
     ) -> ProgramResult {
         instructions::release_init_with_credit::handler(ctx, config, bumps)
+    }
+
+    pub fn release_init_via_hub(
+        ctx: Context<ReleaseInitializeViaHub>,
+        config: ReleaseConfig,
+        bumps: ReleaseBumps,
+    ) -> ProgramResult {
+        instructions::release_init_via_hub::handler(ctx, config, bumps)
     }
 
 
@@ -139,4 +146,36 @@ pub mod nina {
     ) -> ProgramResult {
         instructions::vault_withdraw::handler(ctx, amount)
     }
+
+    pub fn hub_init(
+        ctx: Context<HubInit>,
+        params: HubInitParams,
+    ) -> ProgramResult {
+        instructions::hub_init::handler(ctx, params)
+    }
+
+    pub fn hub_add_artist(
+        ctx: Context<HubAddArtist>,
+    ) -> ProgramResult {
+        instructions::hub_add_artist::handler(ctx)
+    }
+
+    pub fn hub_add_release(
+        ctx: Context<HubAddRelease>,
+    ) -> ProgramResult {
+        instructions::hub_add_release::handler(ctx)
+    }
+
+    pub fn hub_remove_artist(
+        ctx: Context<HubRemoveArtist>,
+    ) -> ProgramResult {
+        instructions::hub_remove_artist::handler(ctx)
+    }
+
+    pub fn hub_remove_release(
+        ctx: Context<HubRemoveRelease>,
+    ) -> ProgramResult {
+        instructions::hub_remove_release::handler(ctx)
+    }
+
 }

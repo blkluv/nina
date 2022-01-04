@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, TokenAccount, Mint, Token};
+use anchor_spl::token::{self, TokenAccount, Mint, Token, Burn};
 
 use crate::state::*;
-use crate::utils::{nina_publishing_account};
 
 #[derive(Accounts)]
-pub struct ReleaseInitializeProtected<'info> {
+pub struct ReleaseInitializeViaHub<'info> {
     #[account(
         init,
         seeds = [b"nina-release".as_ref(), release_mint.key().as_ref()],
@@ -13,18 +12,35 @@ pub struct ReleaseInitializeProtected<'info> {
         payer = payer,
     )]
     pub release: AccountLoader<'info, Release>,
-	#[account(
+    #[account(
         seeds = [release.key().as_ref()],
         bump,
     )]
     pub release_signer: UncheckedAccount<'info>,
-    pub release_mint: Account<'info, Mint>,
-    #[account(mut)]
-    #[cfg_attr(
-        not(feature = "test"),
-        account(address = address = nina_publishing_account::ID),
+    #[account(
+        seeds = [b"nina-hub-artist".as_ref(), hub.key().as_ref(), payer.key().as_ref()],
+        bump,
+        constraint = hub_artist.artist == payer.key(),
     )]
+    pub hub_artist: Box<Account<'info, HubArtist>>,
+    pub hub: AccountLoader<'info, Hub>,
+    #[account(
+        init,
+        seeds = [b"nina-hub-release".as_ref(), hub.key().as_ref(), release.key().as_ref()],
+        bump,
+        payer = payer,
+    )]
+    pub hub_release: Box<Account<'info, HubRelease>>,
+    pub hub_curator: UncheckedAccount<'info>,
+    #[account(
+        constraint = hub_curator_usdc_token_account.owner == hub_curator.key(),
+        constraint = hub_curator_usdc_token_account.mint == payment_mint.key(),
+    )]
+    pub hub_curator_usdc_token_account: Box<Account<'info, TokenAccount>>,
+    pub release_mint: Box<Account<'info, Mint>>,
+    #[account(mut)]
     pub payer: Signer<'info>,
+    #[account(mut)]
     pub authority: UncheckedAccount<'info>,
     #[account(
         constraint = authority_token_account.owner == authority.key(),
@@ -44,7 +60,7 @@ pub struct ReleaseInitializeProtected<'info> {
 }
 
 pub fn handler(
-    ctx: Context<ReleaseInitializeProtected>,
+    ctx: Context<ReleaseInitializeViaHub>,
     config: ReleaseConfig,
     bumps: ReleaseBumps,
 ) -> ProgramResult {
@@ -61,6 +77,24 @@ pub fn handler(
         config,
         bumps,
     )?;
+
+    let hub = ctx.accounts.hub.load()?;
+    &ctx.accounts.release.load();
+    Release::release_revenue_share_transfer_handler (
+        &ctx.accounts.release,
+        ctx.accounts.release_signer.to_account_info().clone(),
+        ctx.accounts.royalty_token_account.to_account_info(),
+        *ctx.accounts.authority.to_account_info().key,
+        *ctx.accounts.hub_curator.to_account_info().key,
+        ctx.accounts.hub_curator_usdc_token_account.to_account_info().clone(),
+        ctx.accounts.token_program.to_account_info().clone(),
+        hub.fee,
+        true,
+    )?;
+
+    let hub_release = &mut ctx.accounts.hub_release;
+    hub_release.hub = ctx.accounts.hub.key();
+    hub_release.release = ctx.accounts.release.key();
 
     Ok(())
 }
