@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
+import * as anchor from '@project-serum/anchor'
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSnackbar } from 'notistack'
 import Typography from "@mui/material/Typography";
@@ -10,6 +11,7 @@ import { WebBundlr } from "@bundlr-network/client/web";
 import NinaBox from "./NinaBox";
 
 const { NinaContext } = ninaCommon.contexts
+const { NinaClient } = ninaCommon.utils
 
 const Account = () => {
   const wallet = useWallet();
@@ -34,7 +36,11 @@ const Account = () => {
         sx={{ backgroundColor: "white" }}
       >
         <div>
-          <Typography onClick={() => getBundlerBalance()}>Bundler Balance: {bundlerBalance / 100000000}</Typography>
+          <Typography onClick={() => getBundlerBalance()}>Bundler Balance: {NinaClient.nativeToUiString(
+              bundlerBalance,
+              new anchor.web3.PublicKey(NinaClient.ids().mints.wsol)
+            )}
+          </Typography>
           <div>
             <label for="fund">Fund Account:</label>
             <input name="fund" type="text" onChange={(e) => setFundAmount(e.target.value)}/>
