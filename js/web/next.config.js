@@ -1,3 +1,6 @@
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
+const webpack = require('webpack');
+
 const withTM = require("next-transpile-modules")([
   "@blocto/sdk",
   "@project-serum/sol-wallet-adapter",
@@ -33,10 +36,20 @@ module.exports = withTM({
       path: false,
       os: false,
       crypto: false,
-      stream: false,
       https: false,
+      child_process: false,
+      readline: false,
+      stream: require.resolve("stream-browserify"),
+      buffer: require.resolve("buffer-browserify"),
+      tty: require.resolve("tty-browserify")
     };
-
+    config.plugins.push(
+      new NodePolyfillPlugin(),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer'],
+      }),
+    )
     return config;
   },
   env: {

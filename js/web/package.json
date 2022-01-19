@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@bundlr-network/client": "^0.5.7",
     "@emotion/server": "^11.4.0",
     "@fortawesome/free-brands-svg-icons": "^5.15.4",
     "@fortawesome/react-fontawesome": "^0.1.16",
@@ -10,7 +11,10 @@
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "axios": "^0.24.0",
+    "babel-loader": "^8.2.3",
     "babel-plugin-inline-react-svg": "^2.0.1",
+    "buffer": "^6.0.3",
+    "buffer-browserify": "^0.2.5",
     "eslint": "^8.5.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-react": "^7.27.1",
@@ -20,7 +24,9 @@
     "next-transpile-modules": "^9.0.0",
     "nextjs-breadcrumbs": "^1.1.9",
     "nina-common": "0.1.0",
+    "node-gyp": "^8.4.1",
     "react": "^17.0.2",
+    "react-app-polyfill": "^3.0.0",
     "react-device-detect": "^2.1.2",
     "react-dom": "^17.0.2",
     "react-dropzone-uploader": "^2.11.0",
@@ -29,7 +35,12 @@
     "react-router-breadcrumbs-hoc": "^4.1.0",
     "react-slick": "^0.28.1",
     "react-smooth-image": "^1.1.0",
-    "slick-carousel": "^1.8.1"
+    "resolve": "^1.21.0",
+    "slick-carousel": "^1.8.1",
+    "stream": "^0.0.2",
+    "stream-browserify": "^3.0.0",
+    "tty": "^1.0.1",
+    "tty-browserify": "^0.0.1"
   },
   "scripts": {
     "dev": "next",
@@ -39,10 +50,26 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier -w \"{,!(node_modules)/**/}*.js\""
   },
+  "babel": {
+    "presets": [
+      "next/babel"
+    ],
+    "plugins": [
+      [
+        "styled-components",
+        {
+          "ssr": true
+        }
+      ],
+      "inline-react-svg"
+    ]
+  },
   "browser": {
     "crypto": false
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^12.0.7"
+    "@next/eslint-plugin-next": "^12.0.7",
+    "node-polyfill-webpack-plugin": "^1.1.4",
+    "process": "^0.11.10"
   }
 }

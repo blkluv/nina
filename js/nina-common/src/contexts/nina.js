@@ -5,6 +5,9 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { ConnectionContext } from './connection'
 import { findOrCreateAssociatedTokenAccount } from '../utils/web3'
 import NinaClient from '../utils/client'
+import { WebBundlr } from "@bundlr-network/client/web";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
+import BigNumber from "bignumber.js";
 
 const CoinGeckoClient = new CoinGecko()
 
@@ -16,9 +19,17 @@ const NinaContextProvider = ({ children, releasePubkey }) => {
   const [usdcBalance, setUsdcBalance] = useState(0)
   const [solPrice, setSolPrice] = useState(0)
   const [npcAmountHeld, setNpcAmountHeld] = useState(0)
+  const [provider, setProvider] = useState()
+  const [bundlerAddress, setBundlerAddress] = useState()
+  const [bundlerBalance, setBundlerBalance] = useState("0")
+  const [bundler, setBundler] = useState(undefined)
+  const [bundlerHttpAddress, setBundlerHttpAddress] = useState(
+    "https://node1.bundlr.network"
+  );
 
   useEffect(() => {
     if (wallet?.wallet && wallet.publicKey) {
+      initBundlr()
       if (releasePubkey) {
         createCollectionForSingleRelease(releasePubkey)
       } else {
@@ -34,6 +45,58 @@ const NinaContextProvider = ({ children, releasePubkey }) => {
     }
   }, [wallet.wallet, wallet.publicKey])
 
+  const currencyMap = {
+    "solana": {
+      providers: ["Phantom", "Sollet"], opts: {}
+    },
+   }
+
+  const providerMap = {
+    "Phantom": async (c) => {
+      if (window.solana.isPhantom) {
+        await window.solana.connect();
+        const p = new PhantomWalletAdapter()
+        await p.connect()
+        return p;
+      }
+    }
+  }
+
+  const initBundlr = async () => {
+    if (provider) {
+      setProvider(undefined);
+      setBundler(undefined);
+      setBundlerAddress(undefined);
+      return;
+    }
+
+    const pname = "Phantom";
+    const cname = "solana";
+    const p = providerMap[pname] // get provider entry
+    const c = currencyMap[cname]
+    console.log(`loading: ${pname} for ${cname}`)
+    const providerInstance = await p(c)
+    setProvider(providerInstance)
+    console.log('providerInstance: ', providerInstance)
+    const bundlr = new WebBundlr(bundlerHttpAddress, "solana", providerInstance)
+    try {
+      // Check for valid bundlr node
+      await bundlr.utils.getBundlerAddress("solana")
+    } catch (error) {
+      console.warn('bundlr error: ', error)
+      return;
+    }
+    try {
+      await bundlr.ready();
+    } catch (err) {
+      console.warn('error 2: ', err);
+    }
+    console.log('sdfsd: ', bundlr)
+    setBundlerAddress(bundlr?.address);
+    setBundler(bundlr);
+    getBundlerBalance(bundlr);
+  }
+
   const {
     createCollection,
     createCollectionForSingleRelease,
@@ -44,6 +107,9 @@ const NinaContextProvider = ({ children, releasePubkey }) => {
     getSolPrice,
     getUsdcBalance,
     getNpcAmountHeld,
+    bundlerFund,
+    bundlerWithdraw,
+    getBundlerBalance,
   } = ninaContextHelper({
     wallet,
     connection,
@@ -53,6 +119,8 @@ const NinaContextProvider = ({ children, releasePubkey }) => {
     setUsdcBalance,
     npcAmountHeld,
     setNpcAmountHeld,
+    bundler,
+    setBundlerBalance
   })
 
   return (
@@ -71,6 +139,10 @@ const NinaContextProvider = ({ children, releasePubkey }) => {
         usdcBalance,
         getNpcAmountHeld,
         npcAmountHeld,
+        bundlerFund,
+        bundlerWithdraw,
+        getBundlerBalance,
+        bundlerBalance,
       }}
     >
       {children}
@@ -87,6 +159,8 @@ const ninaContextHelper = ({
   setSolPrice,
   setUsdcBalance,
   setNpcAmountHeld,
+  bundler,
+  setBundlerBalance
 }) => {
   // Collection
 
@@ -318,6 +392,54 @@ const ninaContextHelper = ({
     return
   }
 
+  const bundlerFund = async (fundAmount) => {
+    try {
+      if (bundler && fundAmount) {
+        const value = parseInput(fundAmount)
+        if (!value) return
+        const response = await await bundler.fund(value)
+        console.log('Bundlr funded: ', response.id)
+        await getBundlerBalance()
+      }
+    } catch (error) {
+      console.warn('Bundlr fund error: ', error)
+    }
+  };
+
+  const bundlerWithdraw = async (withdrawAmount) => {
+    try {
+      if (bundler && withdrawAmount) {
+        const value = parseInput(withdrawAmount)
+        if (!value) return
+        const response = await bundler.withdrawBalance(value)
+        console.log('Bundlr withdraw: ', response.data.tx_id)
+        await getBundlerBalance()
+      }
+    } catch (error) {
+      console.warn('Bundlr withdraw error: ', error)
+    }
+  };
+
+  const parseInput = (input) => {
+    const conv = new BigNumber(input).multipliedBy(bundler.currencyConfig.base[1]);
+    if (conv.isLessThan(1)) {
+      console.warn("Value too small!")
+      return;
+    }
+    return conv;
+  }
+
+  const getBundlerBalance = async () => {
+    try {
+      console.log('BUDNLER: ', bundler)
+      const bundlerBalanceRequest = await bundler.getLoadedBalance()
+      console.log(bundlerBalanceRequest)
+      setBundlerBalance(bundlerBalanceRequest.toString())
+    } catch (error) {
+      console.warn('Unable to get Bundlr Balance: ', error)
+    }
+  }
+
   return {
     createCollection,
     createCollectionForSingleRelease,
@@ -328,5 +450,8 @@ const ninaContextHelper = ({
     getSolPrice,
     getUsdcBalance,
     getNpcAmountHeld,
+    bundlerFund,
+    bundlerWithdraw,
+    getBundlerBalance,
   }
 }

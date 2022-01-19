@@ -31,7 +31,7 @@ const ENDPOINTS = {
   },
   mainnet: {
     name: "mainnet",
-    endpoint: "https://nina.rpcpool.com",
+    endpoint: "https://api.mainnet-beta.solana.com/",
     custom: true,
   },
 };
